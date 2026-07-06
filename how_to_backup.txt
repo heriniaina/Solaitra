@@ -1,0 +1,43 @@
+  To get your  google-service-account.json  credentials file, follow these steps:
+
+  ### 1. Create a Project on Google Cloud Console
+
+  1. Go to the Google Cloud Console https://console.cloud.google.com/.
+  2. Click on the project dropdown in the top bar and click New Project (or select an existing one).
+  3. Name your project and click Create.
+
+  ### 2. Enable the Google Drive API
+
+  1. In the left navigation menu, go to APIs & Services > Library.
+  2. Search for Google Drive API in the search bar.
+  3. Click on the Google Drive API result and click Enable.
+
+  ### 3. Create a Service Account
+
+  1. Go to APIs & Services > Credentials.
+  2. Click + CREATE CREDENTIALS at the top and select Service account.
+  3. Fill in the service account details:
+      • Service account name: e.g.,  db-backup-manager 
+      • Service account ID: (automatically generated)
+  4. Click Create and Continue.
+  5. (Optional) Skip step 2 (Grant access to project) and step 3 (Grant users access). Click Done.
+
+  ### 4. Generate and Download the JSON Key
+
+  1. In the credentials list, scroll down to the Service Accounts section and click on the email address of the account you just created.
+  2. Go to the Keys tab at the top.
+  3. Click ADD KEY > Create new key.
+  4. Select JSON as the key type and click Create.
+  5. A  .json  file will automatically download to your computer. Rename this file to  google-service-account.json .
+  ──────
+  ### ⚠️ Crucial Step: Share your Google Drive Folder with the Service Account
+
+  Because service accounts act as isolated automated users, your app will not see your personal Drive folders by default.
+
+  1. Open the downloaded  google-service-account.json  file and look for the  "client_email"  key (it looks like  db-backup-manager@your-project.iam.gserviceaccount.com ). Copy
+  this email address.
+  2. Go to your Google Drive in the browser.
+  3. Right-click on the folder where you want to store your backups, click Share, and paste the Service Account email.
+  4. Give it Editor permissions so it can write/delete backups.
+  5. Copy the ID of this folder from the URL (the string of characters after  folders/  in the URL:  drive.google.com/drive/folders/YOUR_FOLDER_ID ).
+  6. Add this folder ID to your environment configuration ( GOOGLE_DRIVE_FOLDER_ID  in  .env ).

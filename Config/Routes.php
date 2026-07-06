@@ -11,3 +11,11 @@ $routes->group('admin/auth', ['namespace' => '\\Solaitra\\Base\\Controllers', 'f
     $routes->match(['GET', 'POST'], 'users/edit/(:num)', 'AuthManagerController::editUser/$1');
 });
 
+$routes->group('admin/backups', ['namespace' => '\\Solaitra\\Base\\Controllers', 'filter' => 'group:admin,superadmin'], static function ($routes) {
+    $routes->get('/', 'BackupController::index');
+    $routes->post('create', 'BackupController::create');
+    $routes->get('download/(:any)', 'BackupController::download/$1');
+    $routes->post('delete/(:any)', 'BackupController::delete/$1');
+});
+
+
