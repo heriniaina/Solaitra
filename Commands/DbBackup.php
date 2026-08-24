@@ -96,7 +96,7 @@ class DbBackup extends BaseCommand
         
         // Use shell_exec to run mysqldump
         $cmd = sprintf(
-            '%s -h %s -P %s -u %s %s %s > %s 2>&1',
+            '%s --skip-ssl -h %s -P %s -u %s %s %s > %s 2>&1',
             escapeshellarg($mysqldumpPath),
             escapeshellarg($hostname),
             escapeshellarg($port),
@@ -119,7 +119,11 @@ class DbBackup extends BaseCommand
 
         // If file starts with an error like "mysqldump: [Warning]" or similar errors, check it
         $firstLine = fgets(fopen($tempPath, 'r'));
-        if (str_contains($firstLine, 'mysqldump: error') || str_contains($firstLine, 'Access denied')) {
+        if (
+            (str_contains($firstLine, 'mysqldump:') && !str_contains(strtolower($firstLine), 'warning'))
+            || str_contains($firstLine, 'Access denied')
+            || stripos($firstLine, 'error') !== false
+        ) {
             CLI::error("Backup failed. mysqldump returned an error:");
             CLI::write(file_get_contents($tempPath), 'red');
             unlink($tempPath);

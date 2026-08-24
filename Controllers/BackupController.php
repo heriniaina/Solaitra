@@ -81,7 +81,7 @@ class BackupController extends BaseController
 
         $passArg = !empty($password) ? '-p' . escapeshellarg($password) : '';
         $cmd = sprintf(
-            '%s -h %s -P %s -u %s %s %s > %s 2>&1',
+            '%s --skip-ssl -h %s -P %s -u %s %s %s > %s 2>&1',
             escapeshellarg($mysqldumpPath),
             escapeshellarg($hostname),
             escapeshellarg($port),
@@ -103,7 +103,11 @@ class BackupController extends BaseController
 
         // Check if there was an error in export file itself
         $firstLine = fgets(fopen($tempPath, 'r'));
-        if (str_contains($firstLine, 'mysqldump: error') || str_contains($firstLine, 'Access denied')) {
+        if (
+            (str_contains($firstLine, 'mysqldump:') && !str_contains(strtolower($firstLine), 'warning'))
+            || str_contains($firstLine, 'Access denied')
+            || stripos($firstLine, 'error') !== false
+        ) {
             $errorMsg = 'Backup failed: ' . trim(file_get_contents($tempPath));
             unlink($tempPath);
             return redirect()->to('admin/backups')->with('error', $errorMsg);
