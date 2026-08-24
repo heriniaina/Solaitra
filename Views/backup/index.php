@@ -7,7 +7,7 @@
         <div class="d-flex justify-content-between align-items-center mb-4">
             <div>
                 <h1 class="h3 text-gray-800 mb-0"><?= esc($page_title) ?></h1>
-                <p class="text-muted small mb-0">Manage, generate, and store database backups securely using Google Drive and Local Storage.</p>
+                <p class="text-muted small mb-0">Manage, generate, and store database backups securely using Firebase Storage and Local Storage.</p>
             </div>
             
             <form action="<?= site_url('admin/backups/create') ?>" method="POST" onsubmit="showBackupLoading(this)">
@@ -39,7 +39,7 @@
 
         <!-- Configuration Card & DB Info -->
         <div class="row mb-4">
-            <!-- Google Drive Connection Status -->
+            <!-- Firebase Storage Connection Status -->
             <div class="col-md-7 mb-3 mb-md-0">
                 <div class="card h-100 border-0 shadow-sm">
                     <div class="card-body d-flex align-items-start gap-3">
@@ -47,24 +47,24 @@
                             <i class="bi <?= $is_configured ? 'bi-cloud-check-fill' : 'bi-cloud-slash-fill' ?> fs-3"></i>
                         </div>
                         <div class="flex-grow-1">
-                            <h5 class="card-title mb-1 fw-semibold">Google Drive Storage</h5>
+                            <h5 class="card-title mb-1 fw-semibold">Firebase Storage</h5>
                             <?php if ($is_configured): ?>
                                 <span class="badge bg-success text-white mb-2">Connected & Ready</span>
                                 <div class="text-muted small">
-                                    <strong>Folder ID:</strong> <code><?= esc($folder_id ?: 'Root Directory') ?></code>
+                                    <strong>Bucket:</strong> <code><?= esc($bucket_name) ?></code>
                                 </div>
                             <?php else: ?>
                                 <span class="badge bg-warning text-dark mb-2">Not Configured</span>
                                 <div class="text-muted small">
                                     <p class="mb-1">Backups are currently saved in the local <code>writable/backups/</code> directory only.</p>
                                     <a href="#config-instructions" class="text-decoration-none text-warning" data-bs-toggle="collapse" role="button" aria-expanded="false">
-                                        <i class="bi bi-info-circle me-1"></i>How to connect Google Drive?
+                                        <i class="bi bi-info-circle me-1"></i>How to connect Firebase Storage?
                                     </a>
                                     <div class="collapse mt-2" id="config-instructions">
                                         <div class="p-3 bg-light rounded border small">
                                             <ol class="mb-0 ps-3">
-                                                <li>Place your Google Service Account Credentials JSON file at <code>writable/google-service-account.json</code> (or set it in environment variable <code>GOOGLE_SERVICE_ACCOUNT_JSON</code>).</li>
-                                                <li>Specify your target Google Drive Folder ID in your environment variables: <code>GOOGLE_DRIVE_FOLDER_ID=your_folder_id</code>.</li>
+                                                <li>Place your Service Account Credentials JSON file at <code>modules/google-service-account.json</code> (or set it in environment variable <code>FIREBASE_SERVICE_ACCOUNT_JSON</code>).</li>
+                                                <li>Specify your target Firebase Storage Bucket Name in your environment variables: <code>FIREBASE_BUCKET_NAME=your-project.appspot.com</code>.</li>
                                             </ol>
                                             <?php if (!empty($init_error)): ?>
                                                 <div class="text-danger mt-2 font-monospace">Error details: <?= esc($init_error) ?></div>
@@ -120,37 +120,37 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <!-- Google Drive Backups -->
-                            <?php foreach ($backups as $backup): ?>
-                                <tr>
-                                    <td class="ps-4 py-3">
-                                        <div class="d-flex align-items-center gap-2">
-                                            <i class="bi bi-file-earmark-zip-fill text-danger fs-5"></i>
-                                            <span class="fw-semibold text-dark"><?= esc($backup['name']) ?></span>
-                                        </div>
-                                    </td>
-                                    <td><?= esc($backup['size']) ?></td>
-                                    <td><?= esc($backup['created_at']) ?></td>
-                                    <td>
-                                        <span class="badge bg-success-subtle text-success border border-success-subtle d-inline-flex align-items-center gap-1">
-                                            <i class="bi bi-google-play"></i> Google Drive
-                                        </span>
-                                    </td>
-                                    <td class="text-end pe-4">
-                                        <div class="btn-group gap-2">
-                                            <a href="<?= site_url('admin/backups/download/' . $backup['id']) ?>" class="btn btn-sm btn-outline-primary rounded-2" title="Download">
-                                                <i class="bi bi-download"></i> Download
-                                            </a>
-                                            <form action="<?= site_url('admin/backups/delete/' . $backup['id']) ?>" method="POST" onsubmit="return confirm('Are you sure you want to delete this backup from Google Drive? This cannot be undone.')" class="d-inline">
-                                                <?= csrf_field() ?>
-                                                <button type="submit" class="btn btn-sm btn-outline-danger rounded-2" title="Delete">
-                                                    <i class="bi bi-trash"></i> Delete
-                                                </button>
-                                            </form>
-                                        </div>
-                                    </td>
-                                </tr>
-                            <?php endforeach; ?>
+                             <!-- Firebase Storage Backups -->
+                             <?php foreach ($backups as $backup): ?>
+                                 <tr>
+                                     <td class="ps-4 py-3">
+                                         <div class="d-flex align-items-center gap-2">
+                                             <i class="bi bi-file-earmark-zip-fill text-danger fs-5"></i>
+                                             <span class="fw-semibold text-dark"><?= esc($backup['name']) ?></span>
+                                         </div>
+                                     </td>
+                                     <td><?= esc($backup['size']) ?></td>
+                                     <td><?= esc($backup['created_at']) ?></td>
+                                     <td>
+                                         <span class="badge bg-warning-subtle text-warning border border-warning-subtle d-inline-flex align-items-center gap-1">
+                                             <i class="bi bi-fire"></i> Firebase Storage
+                                         </span>
+                                     </td>
+                                     <td class="text-end pe-4">
+                                         <div class="btn-group gap-2">
+                                             <a href="<?= site_url('admin/backups/download/' . $backup['id']) ?>" class="btn btn-sm btn-outline-primary rounded-2" title="Download">
+                                                 <i class="bi bi-download"></i> Download
+                                             </a>
+                                             <form action="<?= site_url('admin/backups/delete/' . $backup['id']) ?>" method="POST" onsubmit="return confirm('Are you sure you want to delete this backup from Firebase Storage? This cannot be undone.')" class="d-inline">
+                                                 <?= csrf_field() ?>
+                                                 <button type="submit" class="btn btn-sm btn-outline-danger rounded-2" title="Delete">
+                                                     <i class="bi bi-trash"></i> Delete
+                                                 </button>
+                                             </form>
+                                         </div>
+                                     </td>
+                                 </tr>
+                             <?php endforeach; ?>
 
                             <!-- Local Backups -->
                             <?php foreach ($local_backups as $local): ?>

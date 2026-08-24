@@ -4,7 +4,7 @@ namespace Solaitra\Base\Commands;
 
 use CodeIgniter\CLI\BaseCommand;
 use CodeIgniter\CLI\CLI;
-use Solaitra\Base\Libraries\GoogleDriveService;
+use Solaitra\Base\Libraries\FirebaseStorageService;
 use Exception;
 
 class DbBackup extends BaseCommand
@@ -21,21 +21,21 @@ class DbBackup extends BaseCommand
      *
      * @var string
      */
-    protected $name = 'db:backup-drive';
+    protected $name = 'db:backup-firebase';
 
     /**
      * The Command's Description
      *
      * @var string
      */
-    protected $description = 'Creates a database backup (.sql.gz) and uploads it to Google Drive.';
+    protected $description = 'Creates a database backup (.sql.gz) and uploads it to Firebase Storage.';
 
     /**
      * The Command's Usage
      *
      * @var string
      */
-    protected $usage = 'db:backup-drive';
+    protected $usage = 'db:backup-firebase';
 
     /**
      * The Command's Arguments
@@ -150,16 +150,16 @@ class DbBackup extends BaseCommand
         }
 
         CLI::write("File ready: " . basename($finalPath) . " (" . number_format(filesize($finalPath) / 1024, 2) . " KB)", 'green');
-        CLI::write("Uploading to Google Drive...", 'yellow');
+        CLI::write("Uploading to Firebase Storage...", 'yellow');
 
         try {
-            $driveService = new GoogleDriveService();
-            if (!$driveService->isConfigured()) {
-                throw new Exception("Google Drive is not configured: " . $driveService->getInitError());
+            $firebaseService = new FirebaseStorageService();
+            if (!$firebaseService->isConfigured()) {
+                throw new Exception("Firebase Storage is not configured: " . $firebaseService->getInitError());
             }
 
-            $fileId = $driveService->uploadBackup($finalPath, $finalFilename);
-            CLI::write("Backup successfully uploaded to Google Drive! File ID: " . $fileId, 'green');
+            $fileId = $firebaseService->uploadBackup($finalPath, $finalFilename);
+            CLI::write("Backup successfully uploaded to Firebase Storage! File ID: " . $fileId, 'green');
             
             // Delete local temp file
             unlink($finalPath);

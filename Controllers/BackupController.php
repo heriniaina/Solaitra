@@ -2,39 +2,43 @@
 
 namespace Solaitra\Base\Controllers;
 
-use Solaitra\Base\Libraries\GoogleDriveService;
+use Solaitra\Base\Libraries\FirebaseStorageService;
 use Exception;
 
 class BackupController extends BaseController
 {
-    protected GoogleDriveService $driveService;
+    protected FirebaseStorageService $firebaseService;
 
     public function __construct()
     {
-        $this->driveService = new GoogleDriveService();
+        $this->firebaseService = new FirebaseStorageService();
         $this->data['page_title'] = 'Database Backup Manager';
     }
 
     /**
-     * List backups from Google Drive (or local backups if Drive is not configured).
+     * List backups from Firebase Storage (or local backups if Firebase is not configured).
      */
     public function index()
     {
-        $this->data['is_configured'] = $this->driveService->isConfigured();
-        $this->data['init_error'] = $this->driveService->getInitError();
-        $this->data['folder_id'] = $this->driveService->getFolderId();
+        $this->data['is_configured'] = $this->firebaseService->isConfigured();
+        $this->data['init_error'] = $this->firebaseService->getInitError();
+        $this->data['bucket_name'] = $this->firebaseService->getBucketName();
         $this->data['backups'] = [];
         $this->data['local_backups'] = $this->getLocalBackups();
 
         if ($this->data['is_configured']) {
-            $driveFiles = $this->driveService->listBackups();
-            foreach ($driveFiles as $file) {
+            $firebaseFiles = $this->firebaseService->listBackups();
+            foreach ($firebaseFiles as $file) {
+                $info = $file->info();
+                $size = isset($info['size']) ? number_format($info['size'] / 1024, 2) . ' KB' : 'Unknown';
+                $createdAt = isset($info['timeCreated']) ? date('Y-m-d H:i:s', strtotime($info['timeCreated'])) : 'Unknown';
+                
                 $this->data['backups'][] = [
-                    'id'          => $file->getId(),
-                    'name'        => $file->getName(),
-                    'size'        => $file->getSize() ? number_format($file->getSize() / 1024, 2) . ' KB' : 'Unknown',
-                    'created_at'  => date('Y-m-d H:i:s', strtotime($file->getCreatedTime())),
-                    'source'      => 'google_drive'
+                    'id'          => $file->name(),
+                    'name'        => $file->name(),
+                    'size'        => $size,
+                    'created_at'  => $createdAt,
+                    'source'      => 'firebase_storage'
                 ];
             }
         }
@@ -126,19 +130,19 @@ class BackupController extends BaseController
             $finalFilename = $filename;
         }
 
-        // Upload if Google Drive is configured
-        if ($this->driveService->isConfigured()) {
+        // Upload if Firebase Storage is configured
+        if ($this->firebaseService->isConfigured()) {
             try {
-                $fileId = $this->driveService->uploadBackup($finalPath, $finalFilename);
+                $fileId = $this->firebaseService->uploadBackup($finalPath, $finalFilename);
                 unlink($finalPath); // Clean up local file after successful upload
-                return redirect()->to('admin/backups')->with('message', 'Database backup created and uploaded to Google Drive successfully. ID: ' . $fileId);
+                return redirect()->to('admin/backups')->with('message', 'Database backup created and uploaded to Firebase Storage successfully. Name: ' . $fileId);
             } catch (Exception $e) {
-                return redirect()->to('admin/backups')->with('error', 'Backup created but upload to Google Drive failed: ' . $e->getMessage() . '. Local copy saved as: ' . $finalFilename);
+                return redirect()->to('admin/backups')->with('error', 'Backup created but upload to Firebase Storage failed: ' . $e->getMessage() . '. Local copy saved as: ' . $finalFilename);
             }
         }
 
-        // Retain local backup if Google Drive is not configured
-        return redirect()->to('admin/backups')->with('message', 'Database backup created successfully (saved locally because Google Drive is not configured). File: ' . $finalFilename);
+        // Retain local backup if Firebase Storage is not configured
+        return redirect()->to('admin/backups')->with('message', 'Database backup created successfully (saved locally because Firebase Storage is not configured). File: ' . $finalFilename);
     }
 
     /**
@@ -152,18 +156,18 @@ class BackupController extends BaseController
             return $this->response->download($localPath, null);
         }
 
-        // 2. Otherwise download from Google Drive
-        if ($this->driveService->isConfigured()) {
+        // 2. Otherwise download from Firebase Storage
+        if ($this->firebaseService->isConfigured()) {
             try {
-                $fileInfo = $this->driveService->getFileInfo($id);
-                $content = $this->driveService->downloadBackup($id);
+                $fileInfo = $this->firebaseService->getFileInfo($id);
+                $content = $this->firebaseService->downloadBackup($id);
 
                 return $this->response
-                    ->setHeader('Content-Type', $fileInfo->getMimeType() ?: 'application/octet-stream')
-                    ->setHeader('Content-Disposition', 'attachment; filename="' . $fileInfo->getName() . '"')
+                    ->setHeader('Content-Type', $fileInfo['contentType'] ?: 'application/octet-stream')
+                    ->setHeader('Content-Disposition', 'attachment; filename="' . $fileInfo['name'] . '"')
                     ->setBody($content);
             } catch (Exception $e) {
-                return redirect()->to('admin/backups')->with('error', 'Failed to download backup from Google Drive: ' . $e->getMessage());
+                return redirect()->to('admin/backups')->with('error', 'Failed to download backup from Firebase Storage: ' . $e->getMessage());
             }
         }
 
@@ -182,13 +186,13 @@ class BackupController extends BaseController
             return redirect()->to('admin/backups')->with('message', 'Local backup file deleted successfully.');
         }
 
-        // 2. Otherwise delete from Google Drive
-        if ($this->driveService->isConfigured()) {
+        // 2. Otherwise delete from Firebase Storage
+        if ($this->firebaseService->isConfigured()) {
             try {
-                $this->driveService->deleteBackup($id);
-                return redirect()->to('admin/backups')->with('message', 'Backup deleted from Google Drive successfully.');
+                $this->firebaseService->deleteBackup($id);
+                return redirect()->to('admin/backups')->with('message', 'Backup deleted from Firebase Storage successfully.');
             } catch (Exception $e) {
-                return redirect()->to('admin/backups')->with('error', 'Failed to delete backup from Google Drive: ' . $e->getMessage());
+                return redirect()->to('admin/backups')->with('error', 'Failed to delete backup from Firebase Storage: ' . $e->getMessage());
             }
         }
 
